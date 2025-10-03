@@ -1,0 +1,18 @@
+schema Users {
+    id: int;
+    name: string;
+    age: int;
+    status: string;
+}
+
+source users_db <- Postgres(
+    host: "localhost",
+    database: "postgres",
+    user: "postgres",
+    password: env("POSTGRES_PASSWORD"),
+    table: "users"
+) using Users;
+
+sink db_report -> File(path: "db_report.csv");
+
+users_db -> filter(user.age > 30) -> select(id, name) -> db_report;

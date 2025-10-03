@@ -1,0 +1,8 @@
+source users <- File(path: "examples/users_names.csv");
+sink mutated_report -> File(path: "mutated_report.csv");
+
+// Combine first/last names and calculate a new age value
+users -> mutate(
+    full_name = user.first_name + " " + user.last_name,
+    age_plus_10 = user.age + 10
+) -> mutated_report;

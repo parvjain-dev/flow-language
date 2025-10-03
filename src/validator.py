@@ -24,7 +24,18 @@ class Validator(Visitor):
                 self.visit(child)
         
         self.current_schema = previous_schema
-
+    def sort(self, tree):
+        if not self.current_schema:
+            return # No schema to validate against
+        
+        # The children are the column names and optionally 'order' and a value
+        for child in tree.children:
+            # We only care about the column names, which are Tokens
+            if not isinstance(child, Tree) and child.type == 'NAME':
+                col_name = child.value
+                schema_name = next((s_name for s_name, s_val in self.schemas.items() if s_val == self.current_schema), "unknown")
+                if col_name not in self.current_schema:
+                    raise ValueError(f"Validation Error: Column '{col_name}' not found in schema '{schema_name}' while trying to sort.")
     def select(self, tree):
         if not self.current_schema:
             return

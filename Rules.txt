@@ -1,8 +1,5 @@
-Of course. Here is a summary of all the rules for the **Flow** language that we've created so far, explained in simple terms.
 
------
-
-### Flow Language Rules (v0.5)
+### Flow Language Rules (v1.0)
 
 This document explains the syntax and structure of the Flow programming language.
 
@@ -38,10 +35,20 @@ These rules let you describe your data's structure and where it comes from and g
 
   * #### `source`
 
-    A **`source`** defines a data source. You give it a name and specify where to get the data (e.g., a file). You can attach a schema to it using the **`using`** keyword to enable error checking.
+    A **`source`** defines a data source. You give it a name and specify where to get the data from, such as a file. You can attach a schema to it using the **`using`** keyword to enable error checking.
 
     ```flow
-    source users <- File(path: "examples/users.csv") using User;
+    source users_file <- File(path: "examples/users.csv") using User;
+    ```
+
+    It can also connect to databases like PostgreSQL, securely reading credentials using the **`env()`** function.
+
+    ```flow
+    source users_db <- Postgres(
+      host: "localhost",
+      password: env("DB_PASSWORD"),
+      table: "users"
+    ) using User;
     ```
 
   * #### `sink`
@@ -68,7 +75,7 @@ These rules are for processing your data.
 
   * #### `execution`
 
-    This runs a pipeline directly without saving the result to a new variable. It's used for pipelines that end in a sink.
+    This runs a pipeline directly without saving its result to a new variable. It's used for pipelines that end in a sink.
 
     ```flow
     active_users -> select(id, name) -> user_report;
@@ -91,7 +98,7 @@ Transformations are steps in a pipeline that change your data.
 
   * #### `filter()`
 
-    Selects **rows** from your data that match one or more logical conditions.
+    Selects **rows** from your data that match one or more logical conditions using `and` or `or`.
 
     ```flow
     ... -> filter(user.age > 40 and user.status == 'active') -> ...
@@ -103,4 +110,23 @@ Transformations are steps in a pipeline that change your data.
 
     ```flow
     ... -> select(id, name, age) -> ...
+    ```
+
+  * #### `sort()`
+
+    Changes the **order of rows** based on one or more columns. You can specify the order as `'asc'` (ascending) or `'desc'` (descending).
+
+    ```flow
+    ... -> sort(age, order: 'desc') -> ...
+    ```
+
+  * #### `mutate()`
+
+    Creates **new columns** based on expressions. It supports arithmetic (`+`, `-`, `*`, `/`) and string concatenation.
+
+    ```flow
+    ... -> mutate(
+      full_name = user.first_name + " " + user.last_name,
+      age_in_10_years = user.age + 10
+    ) -> ...
     ```

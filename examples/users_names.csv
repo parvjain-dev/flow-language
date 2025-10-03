@@ -1,0 +1,4 @@
+id,first_name,last_name,age,status
+1,Alice,Smith,25,active
+2,Bob,Jones,42,active
+3,Charlie,Brown,30,inactive

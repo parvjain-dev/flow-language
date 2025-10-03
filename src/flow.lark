@@ -1,11 +1,8 @@
 // src/flow.lark
 
 ?start: statement+
-
-// A statement can now also be a schema declaration
 ?statement: schema_decl | source_decl | sink_decl | assignment | execution
 
-// --- SCHEMA DEFINITION ---
 schema_decl: "schema" NAME "{" (field_decl)* "}"
 field_decl:  NAME ":" TYPE ";"
 TYPE: "string" | "int" | "float" | "bool"
@@ -15,28 +12,42 @@ sink_decl:   "sink" NAME "->" function_call ";"
 
 assignment: NAME "=" pipeline ";"
 execution:  pipeline ";"
-
 pipeline: NAME (pipe_step)*
 pipe_step: "->" (transformation | NAME)
 
-transformation: filter | select
-// ... (rest of the file is the same) ...
-filter: "filter" "(" expression ")"
+// --- TRANSFORMATIONS & EXPRESSIONS ---
+transformation: filter | select | sort | mutate
+filter: "filter" "(" bool_expression ")"
 select: "select" "(" NAME ("," NAME)* ")"
-expression: condition (op condition)*
-op:         AND | OR
-condition:  NAME "." NAME OPERATOR value
-OPERATOR:   ">" | "<" | "==" | "!="
-?value:     STRING | SIGNED_NUMBER
+sort:   "sort" "(" NAME ("," NAME)* ("," "order" ":" STRING)? ")"
+mutate: "mutate" "(" mutate_expr ("," mutate_expr)* ")"
+
+// UPDATED: These rules now use named terminals for operators
+bool_expression: arith_expr (BOOL_OPERATOR arith_expr)*
+?arith_expr: term ((PLUS | MINUS) term)*
+?term: factor ((STAR | SLASH) factor)*
+?factor: (SIGNED_NUMBER | STRING | column_ref | "(" arith_expr ")")
+
+column_ref: NAME "." NAME
+mutate_expr: NAME "=" arith_expr
+
+BOOL_OPERATOR: ">" | "<" | "==" | "!="
 function_call: NAME "(" arguments? ")"
-?arguments:    NAME ":" STRING
-// TERMINALS
+env_var: "env" "(" STRING ")"
+?arguments: (NAME ":" (STRING | SIGNED_NUMBER | env_var) ("," NAME ":" (STRING | SIGNED_NUMBER | env_var))*)
+
+// --- TERMINALS (UPDATED) ---
 NAME:   /[a-zA-Z_]\w*/
 STRING: /"[^"]*"|'[^']*'/
 COMMENT: /\/\/[^\n]*/
 AND:    "and"
 OR:     "or"
-// IGNORE RULES
+PLUS:   "+"
+MINUS:  "-"
+STAR:   "*"
+SLASH:  "/"
+
+// --- IGNORE RULES ---
 %import common.WS
 %import common.SIGNED_NUMBER
 %ignore WS

@@ -1,0 +1,19 @@
+schema Users {
+    id: int;
+    name: string;
+    age: int;
+    status: string;
+}
+
+source users_db <- Postgres(
+    host: "localhost",
+    database: "postgres",
+    user: "postgres",
+    password: env("POSTGRES_PASSWORD"),
+    table: "users"
+) using Users;
+
+sink sorted_report -> File(path: "sorted_report.csv");
+
+// Get all users and sort them by age, oldest first.
+users_db -> sort(age, order: 'desc') -> sorted_report;

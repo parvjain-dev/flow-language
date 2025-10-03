@@ -2,19 +2,19 @@
 
 from lark import Lark
 from transpiler import FlowTranspiler
-from validator import Validator # <-- IMPORT our new class
+from validator import Validator
 
 # --- Step 1: Parsing ---
-# (This part is the same)
 with open("src/flow.lark", "r") as f:
     flow_grammar = f.read()
 
 flow_parser = Lark(flow_grammar, start='start')
 
-# Choose which file to run
-# test_file = "examples/schema_test.flow"      # This one should PASS
-test_file = "examples/invalid_schema_test.flow" # This one should FAIL
-
+# Choose which file to run by uncommenting it
+# test_file = "examples/schema_test.flow"
+# test_file = "examples/invalid_schema_test.flow"
+# test_file = "examples/postgres_test.flow"
+test_file = "examples/mutate_test.flow" 
 with open(test_file, "r") as f:
     flow_code = f.read()
 
@@ -22,7 +22,7 @@ parse_tree = flow_parser.parse(flow_code)
 
 
 # --- Step 2: Validation ---
-# We first run the transpiler once just to collect the schema info
+# We run the transpiler once just to collect the schema info
 schema_collector = FlowTranspiler()
 schema_collector.transform(parse_tree)
 
