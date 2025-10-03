@@ -1,40 +1,45 @@
 # src/main.py
 
 from lark import Lark
-from transpiler import FlowTranspiler # <-- IMPORT our new class
+from transpiler import FlowTranspiler
+from validator import Validator # <-- IMPORT our new class
 
-# 1. Read the grammar file
+# --- Step 1: Parsing ---
+# (This part is the same)
 with open("src/flow.lark", "r") as f:
     flow_grammar = f.read()
 
-# 2. Create the Lark parser instance
 flow_parser = Lark(flow_grammar, start='start')
 
-# 3. Read the code we want to parse
-# with open("examples/simple_copy.flow", "r") as f:
-#     flow_code = f.read()
-# with open("examples/filter_users.flow", "r") as f: # <-- CHANGE THIS FILENAME
-#     flow_code = f.read()
+# Choose which file to run
+# test_file = "examples/schema_test.flow"      # This one should PASS
+test_file = "examples/invalid_schema_test.flow" # This one should FAIL
 
-
-# with open("examples/complex_filter.flow", "r") as f: # <-- CHANGE THIS
-#     flow_code = f.read()
-# with open("examples/select_users.flow", "r") as f: # <-- CHANGE THIS
-#     flow_code = f.read()
-
-# with open("examples/variables_test.flow", "r") as f: # <-- CHANGE THIS
-#     flow_code = f.read()
-with open("examples/schema_test.flow", "r") as f: # <-- CHANGE THIS
+with open(test_file, "r") as f:
     flow_code = f.read()
-# 4. Parse the code to get the tree
+
 parse_tree = flow_parser.parse(flow_code)
 
-# 5. Create an instance of our transpiler
-transpiler = FlowTranspiler()
 
-# 6. Transform the tree to generate Python code
+# --- Step 2: Validation ---
+# We first run the transpiler once just to collect the schema info
+schema_collector = FlowTranspiler()
+schema_collector.transform(parse_tree)
+
+# Now, we validate the tree using the collected schemas
+validator = Validator(schema_collector.schemas, schema_collector.variable_schemas)
+try:
+    validator.visit(parse_tree)
+    print("✅ Validation successful!")
+except ValueError as e:
+    print(f"❌ {e}")
+    exit() # Stop if validation fails
+
+
+# --- Step 3: Transpilation ---
+# If validation passed, we run the transpiler again to generate the code
+transpiler = FlowTranspiler()
 python_script = transpiler.transform(parse_tree)
 
-# 7. Print the final, generated script!
-print("--- Generated Python Script ---")
+print("\n--- Generated Python Script ---")
 print(python_script)

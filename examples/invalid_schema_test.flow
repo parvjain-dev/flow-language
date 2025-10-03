@@ -1,0 +1,12 @@
+schema User {
+  id: int;
+  name: string;
+  age: int;
+  status: string;
+}
+
+source users <- File(path: "examples/users.csv") using User;
+sink final_report -> File(path: "examples/final_report.csv");
+
+// This pipeline is INVALID because 'email' is not in the User schema.
+users -> select(id, email) -> final_report;
