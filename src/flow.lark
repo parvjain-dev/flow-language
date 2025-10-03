@@ -1,0 +1,22 @@
+// src/flow.lark
+
+?start: statement+
+
+?statement: source_decl | sink_decl | connection
+
+source_decl: "source" NAME "<-" function_call ";"
+sink_decl:   "sink" NAME "->" function_call ";"
+connection:  NAME "->" NAME ";"
+
+function_call: NAME "(" arguments? ")"
+?arguments:    NAME ":" STRING
+
+// TERMINALS
+NAME:   /[a-zA-Z_]\w*/
+STRING: /"[^"]*"/
+COMMENT: /\/\/[^\n]*/   // This is our new, explicit comment rule
+
+// IGNORE RULES
+%import common.WS
+%ignore WS
+%ignore COMMENT         // Tell Lark to completely ignore our new comment rule

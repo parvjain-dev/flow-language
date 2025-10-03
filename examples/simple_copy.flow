@@ -1,0 +1,7 @@
+// examples/simple_copy.flow
+
+source input <- File(path: "./input.csv");
+sink output -> File(path: "./output.csv");
+
+// The simplest possible flow: connect the input directly to the output.
+input -> output;
