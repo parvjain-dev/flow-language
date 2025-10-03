@@ -1,0 +1,6 @@
+// Read user data, filter for users over 30, and save the result.
+
+source users_data <- File(path: "examples/users.csv");
+sink active_users -> File(path: "examples/filtered_users.csv");
+
+users_data -> filter(user.age > 30) -> active_users;

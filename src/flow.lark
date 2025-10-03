@@ -1,22 +1,36 @@
 // src/flow.lark
 
 ?start: statement+
-
 ?statement: source_decl | sink_decl | connection
 
 source_decl: "source" NAME "<-" function_call ";"
 sink_decl:   "sink" NAME "->" function_call ";"
-connection:  NAME "->" NAME ";"
+
+connection:  NAME (pipe_step)+ ";"
+pipe_step:   "->" (transformation | NAME)
+
+transformation: "filter" "(" expression ")"
+
+expression: condition (op condition)*
+// UPDATED: 'op' now uses named terminals instead of string literals.
+op:         AND | OR
+
+condition:  NAME "." NAME OPERATOR value
+OPERATOR:   ">" | "<" | "==" | "!="
+?value:     STRING | SIGNED_NUMBER
 
 function_call: NAME "(" arguments? ")"
 ?arguments:    NAME ":" STRING
 
 // TERMINALS
 NAME:   /[a-zA-Z_]\w*/
-STRING: /"[^"]*"/
-COMMENT: /\/\/[^\n]*/   // This is our new, explicit comment rule
+STRING: /"[^"]*"|'[^']*'/
+COMMENT: /\/\/[^\n]*/
+AND:    "and"  // NEW: 'and' is now a terminal.
+OR:     "or"   // NEW: 'or' is now a terminal.
 
 // IGNORE RULES
 %import common.WS
+%import common.SIGNED_NUMBER
 %ignore WS
-%ignore COMMENT         // Tell Lark to completely ignore our new comment rule
+%ignore COMMENT

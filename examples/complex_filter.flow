@@ -1,0 +1,5 @@
+source users_data <- File(path: "examples/users.csv");
+sink senior_users -> File(path: "examples/senior_users.csv");
+
+// Find users who are over 40 AND are active
+users_data -> filter(user.age > 40 and user.status == 'active') -> senior_users;
