@@ -1,0 +1,5 @@
+source users <- File(path: "examples/users.csv");
+sink report -> File(path: "examples/user_report.csv");
+
+// Find active users over 40, but only keep their name and id for the report.
+users -> filter(user.status == 'active' and user.age > 40) -> select(id, name) -> report;

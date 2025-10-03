@@ -1,0 +1,12 @@
+source users <- File(path: "examples/users.csv");
+sink name_report -> File(path: "name_report.csv");
+sink age_report -> File(path: "age_report.csv");
+
+// Create an intermediate variable for active users
+active_users = users -> filter(user.status == 'active');
+
+// Use the variable to create a name report
+active_users -> select(id, name) -> name_report;
+
+// Use the same variable to create an age report
+active_users -> select(id, age) -> age_report;

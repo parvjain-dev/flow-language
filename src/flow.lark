@@ -1,34 +1,41 @@
 // src/flow.lark
 
 ?start: statement+
-?statement: source_decl | sink_decl | connection
 
-source_decl: "source" NAME "<-" function_call ";"
+// A statement can now also be a schema declaration
+?statement: schema_decl | source_decl | sink_decl | assignment | execution
+
+// --- SCHEMA DEFINITION ---
+schema_decl: "schema" NAME "{" (field_decl)* "}"
+field_decl:  NAME ":" TYPE ";"
+TYPE: "string" | "int" | "float" | "bool"
+
+source_decl: "source" NAME "<-" function_call ("using" NAME)? ";"
 sink_decl:   "sink" NAME "->" function_call ";"
 
-connection:  NAME (pipe_step)+ ";"
-pipe_step:   "->" (transformation | NAME)
+assignment: NAME "=" pipeline ";"
+execution:  pipeline ";"
 
-transformation: "filter" "(" expression ")"
+pipeline: NAME (pipe_step)*
+pipe_step: "->" (transformation | NAME)
 
+transformation: filter | select
+// ... (rest of the file is the same) ...
+filter: "filter" "(" expression ")"
+select: "select" "(" NAME ("," NAME)* ")"
 expression: condition (op condition)*
-// UPDATED: 'op' now uses named terminals instead of string literals.
 op:         AND | OR
-
 condition:  NAME "." NAME OPERATOR value
 OPERATOR:   ">" | "<" | "==" | "!="
 ?value:     STRING | SIGNED_NUMBER
-
 function_call: NAME "(" arguments? ")"
 ?arguments:    NAME ":" STRING
-
 // TERMINALS
 NAME:   /[a-zA-Z_]\w*/
 STRING: /"[^"]*"|'[^']*'/
 COMMENT: /\/\/[^\n]*/
-AND:    "and"  // NEW: 'and' is now a terminal.
-OR:     "or"   // NEW: 'or' is now a terminal.
-
+AND:    "and"
+OR:     "or"
 // IGNORE RULES
 %import common.WS
 %import common.SIGNED_NUMBER

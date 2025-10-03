@@ -17,9 +17,15 @@ flow_parser = Lark(flow_grammar, start='start')
 #     flow_code = f.read()
 
 
-with open("examples/complex_filter.flow", "r") as f: # <-- CHANGE THIS
+# with open("examples/complex_filter.flow", "r") as f: # <-- CHANGE THIS
+#     flow_code = f.read()
+# with open("examples/select_users.flow", "r") as f: # <-- CHANGE THIS
+#     flow_code = f.read()
+
+# with open("examples/variables_test.flow", "r") as f: # <-- CHANGE THIS
+#     flow_code = f.read()
+with open("examples/schema_test.flow", "r") as f: # <-- CHANGE THIS
     flow_code = f.read()
-  
 # 4. Parse the code to get the tree
 parse_tree = flow_parser.parse(flow_code)
 

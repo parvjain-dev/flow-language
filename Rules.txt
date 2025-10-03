@@ -1,0 +1,106 @@
+Of course. Here is a summary of all the rules for the **Flow** language that we've created so far, explained in simple terms.
+
+-----
+
+### Flow Language Rules (v0.5)
+
+This document explains the syntax and structure of the Flow programming language.
+
+-----
+
+### High-Level Structure
+
+A Flow script is composed of one or more **statements**. Each statement is a single instruction that ends with a semicolon (**`;`**).
+
+There are four main types of statements:
+
+1.  **Declarations** (`schema`, `source`, `sink`)
+2.  **Assignments** (`variable = ...`)
+3.  **Executions** (`variable -> ...`)
+
+-----
+
+### Data & Schema Definitions
+
+These rules let you describe your data's structure and where it comes from and goes.
+
+  * #### `schema`
+
+    A **`schema`** block is a blueprint for your data. You give it a name and define all the expected column names and their types.
+
+    ```flow
+    schema User {
+      id: int;
+      name: string;
+      status: string;
+    }
+    ```
+
+  * #### `source`
+
+    A **`source`** defines a data source. You give it a name and specify where to get the data (e.g., a file). You can attach a schema to it using the **`using`** keyword to enable error checking.
+
+    ```flow
+    source users <- File(path: "examples/users.csv") using User;
+    ```
+
+  * #### `sink`
+
+    A **`sink`** defines a data destination. You give it a name and specify where the data should be saved.
+
+    ```flow
+    sink user_report -> File(path: "report.csv");
+    ```
+
+-----
+
+### Pipelines & Variables
+
+These rules are for processing your data.
+
+  * #### `assignment`
+
+    This lets you run a pipeline and save its result into a **variable** using the **`=`** sign. This variable can then be used as the starting point for other pipelines.
+
+    ```flow
+    active_users = users -> filter(user.status == 'active');
+    ```
+
+  * #### `execution`
+
+    This runs a pipeline directly without saving the result to a new variable. It's used for pipelines that end in a sink.
+
+    ```flow
+    active_users -> select(id, name) -> user_report;
+    ```
+
+  * #### `pipeline`
+
+    This is the core concept of Flow. It's a chain of operations starting with a data source (or a variable) and connected by arrows (**`->`**).
+
+    ```flow
+    // This is the pipeline part
+    users -> filter(user.age > 30) -> select(name)
+    ```
+
+-----
+
+### Transformations
+
+Transformations are steps in a pipeline that change your data.
+
+  * #### `filter()`
+
+    Selects **rows** from your data that match one or more logical conditions.
+
+    ```flow
+    ... -> filter(user.age > 40 and user.status == 'active') -> ...
+    ```
+
+  * #### `select()`
+
+    Selects **columns** from your data. You provide a comma-separated list of the columns you want to keep.
+
+    ```flow
+    ... -> select(id, name, age) -> ...
+    ```
