@@ -1,0 +1,17 @@
+schema Users {
+    id: int;
+    name: string;
+    age: int;
+    status: string;
+}
+
+source users_db <- Postgres(
+    host: "localhost",
+    database: "postgres",
+    user: "postgres",
+    password: env("POSTGRES_PASSWORD"),
+    table: "users"
+) using Users;
+    
+// This should FAIL because 'country' is not a valid column to group by.
+country_summary = users_db -> group_by(country) -> aggregate(c = count());

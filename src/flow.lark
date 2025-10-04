@@ -16,13 +16,20 @@ pipeline: NAME (pipe_step)*
 pipe_step: "->" (transformation | NAME)
 
 // --- TRANSFORMATIONS & EXPRESSIONS ---
-transformation: filter | select | sort | mutate
+// UPDATED: Add group_by and aggregate
+transformation: filter | select | sort | mutate | group_by | aggregate
+
 filter: "filter" "(" bool_expression ")"
 select: "select" "(" NAME ("," NAME)* ")"
 sort:   "sort" "(" NAME ("," NAME)* ("," "order" ":" STRING)? ")"
 mutate: "mutate" "(" mutate_expr ("," mutate_expr)* ")"
 
-// UPDATED: These rules now use named terminals for operators
+// NEW: Rules for group_by and aggregate
+group_by: "group_by" "(" NAME ("," NAME)* ")"
+aggregate: "aggregate" "(" agg_expr ("," agg_expr)* ")"
+agg_expr: NAME "=" agg_function
+agg_function: AGG_FUNC_NAME "(" NAME? ")" // e.g., count() or avg(age)
+
 bool_expression: arith_expr (BOOL_OPERATOR arith_expr)*
 ?arith_expr: term ((PLUS | MINUS) term)*
 ?term: factor ((STAR | SLASH) factor)*
@@ -36,7 +43,7 @@ function_call: NAME "(" arguments? ")"
 env_var: "env" "(" STRING ")"
 ?arguments: (NAME ":" (STRING | SIGNED_NUMBER | env_var) ("," NAME ":" (STRING | SIGNED_NUMBER | env_var))*)
 
-// --- TERMINALS (UPDATED) ---
+// --- TERMINALS ---
 NAME:   /[a-zA-Z_]\w*/
 STRING: /"[^"]*"|'[^']*'/
 COMMENT: /\/\/[^\n]*/
@@ -46,6 +53,8 @@ PLUS:   "+"
 MINUS:  "-"
 STAR:   "*"
 SLASH:  "/"
+// NEW: Terminal for aggregation function names
+AGG_FUNC_NAME: "count" | "sum" | "avg" | "mean" | "min" | "max"
 
 // --- IGNORE RULES ---
 %import common.WS

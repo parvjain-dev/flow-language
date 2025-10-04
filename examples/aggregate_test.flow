@@ -1,0 +1,24 @@
+schema Users {
+    id: int;
+    name: string;
+    age: int;
+    status: string;
+}
+
+source users_db <- Postgres(
+    host: "localhost",
+    database: "postgres",
+    user: "postgres",
+    password: env("POSTGRES_PASSWORD"),
+    table: "users"
+) using Users;
+
+sink user_summary_report -> File(path: "user_summary_report.csv");
+
+// This should PASS.
+user_summary = users_db
+    -> group_by(status)
+    -> aggregate(
+        user_count = count(),
+        average_age = avg(age)
+    );
