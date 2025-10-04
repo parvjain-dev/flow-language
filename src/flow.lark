@@ -10,25 +10,27 @@ TYPE: "string" | "int" | "float" | "bool"
 source_decl: "source" NAME "<-" function_call ("using" NAME)? ";"
 sink_decl:   "sink" NAME "->" function_call ";"
 
-assignment: NAME "=" pipeline ";"
+// UPDATED: An assignment can now be a pipeline OR a join expression
+assignment: NAME "=" (pipeline | join_expr) ";"
 execution:  pipeline ";"
+
 pipeline: NAME (pipe_step)*
 pipe_step: "->" (transformation | NAME)
 
 // --- TRANSFORMATIONS & EXPRESSIONS ---
-// UPDATED: Add group_by and aggregate
 transformation: filter | select | sort | mutate | group_by | aggregate
-
 filter: "filter" "(" bool_expression ")"
 select: "select" "(" NAME ("," NAME)* ")"
 sort:   "sort" "(" NAME ("," NAME)* ("," "order" ":" STRING)? ")"
 mutate: "mutate" "(" mutate_expr ("," mutate_expr)* ")"
-
-// NEW: Rules for group_by and aggregate
 group_by: "group_by" "(" NAME ("," NAME)* ")"
 aggregate: "aggregate" "(" agg_expr ("," agg_expr)* ")"
 agg_expr: NAME "=" agg_function
-agg_function: AGG_FUNC_NAME "(" NAME? ")" // e.g., count() or avg(age)
+agg_function: AGG_FUNC_NAME "(" NAME? ")"
+
+// NEW: Rules for the join expression
+join_expr: "join" "(" NAME "," NAME "," "on" ":" join_condition ")"
+join_condition: column_ref "==" column_ref
 
 bool_expression: arith_expr (BOOL_OPERATOR arith_expr)*
 ?arith_expr: term ((PLUS | MINUS) term)*
@@ -53,7 +55,6 @@ PLUS:   "+"
 MINUS:  "-"
 STAR:   "*"
 SLASH:  "/"
-// NEW: Terminal for aggregation function names
 AGG_FUNC_NAME: "count" | "sum" | "avg" | "mean" | "min" | "max"
 
 // --- IGNORE RULES ---

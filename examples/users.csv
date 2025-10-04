@@ -1,6 +1,4 @@
-id,name,age,status
-1,Alice,25,active
-2,Bob,42,active
-3,Charlie,30,inactive
-4,Diana,55,active
-5,Eve,45,inactive
+id,name,city_id
+1,Alice,101
+2,Bob,102
+3,Charlie,101

@@ -1,0 +1,8 @@
+schema Users { id: int; name: string; city_id: int; }
+schema Cities { city_id: int; city_name: string; }
+
+source users <- File(path: "examples/users.csv") using Users;
+source cities <- File(path: "examples/cities.csv") using Cities;
+
+// This should PASS
+user_cities = join(users, cities, on: users.city_id == cities.city_id);

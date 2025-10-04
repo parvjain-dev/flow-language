@@ -13,12 +13,16 @@ source users_db <- Postgres(
     table: "users"
 ) using Users;
 
-sink user_summary_report -> File(path: "user_summary_report.csv");
+// NEW: Define a sink (the destination file)
+sink summary_report -> File(path: "summary_report.csv");
 
-// This should PASS.
+// This part is the same: calculate the summary and save to a variable
 user_summary = users_db
     -> group_by(status)
     -> aggregate(
         user_count = count(),
         average_age = avg(age)
     );
+
+// NEW: Add this final pipeline to write the variable to the sink
+user_summary -> summary_report;

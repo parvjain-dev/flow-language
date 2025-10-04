@@ -1,0 +1,4 @@
+id,first_name,last_name,age,status,full_name,age_plus_10
+1,Alice,Smith,25,active,Alice Smith,35
+2,Bob,Jones,42,active,Bob Jones,52
+3,Charlie,Brown,30,inactive,Charlie Brown,40
