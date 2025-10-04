@@ -36,20 +36,16 @@ class FlowTranspiler(Transformer):
         schema_name, *fields = s
         self.schemas[schema_name] = dict(fields)
         return None
-
     @v_args(inline=True)
-    def column_ref(self, table, column): return (table, column) # Return a tuple of (table, col)
+    def column_ref(self, table, column): return (table, column)
     def arith_expr(self, items): return f"({' '.join(str(i) for i in items)})"
     def term(self, items): return ' '.join(str(i) for i in items)
     def factor(self, items):
-        # Handle column_ref tuples from the child
         if isinstance(items[0], tuple):
             table, column = items[0]
-            # Use placeholder for dataframe, to be replaced in pipeline/mutate
             return f"{{df}}['{column}']"
         return str(items[0])
     def bool_expression(self, items): return " & ".join(f"({item})" for item in items)
-    
     def filter(self, f): return ('filter', f[0])
     def select(self, s): return ('select', [name for name in s])
     def sort(self, s):
@@ -71,40 +67,27 @@ class FlowTranspiler(Transformer):
         pandas_func_map = {'avg': 'mean'}
         pandas_func = pandas_func_map.get(func_name, func_name)
         return (col_name, pandas_func)
+    
+    # THIS IS THE FIX: Replaced 'aggr_expr = agg_expr' with the correct method
     def agg_expr(self, a):
         new_col_name, agg_func_tuple = a
         return (new_col_name, agg_func_tuple)
+        
     def aggregate(self, a):
         agg_dict = {new_col: (col, func) for new_col, (col, func) in a}
         return ('aggregate', agg_dict)
-
-    # --- FINAL: Real implementation for 'join' ---
     def join_condition(self, j):
         left_col_ref, right_col_ref = j
-        # left_col_ref is a tuple like ('users', 'city_id')
         return {'left_on': left_col_ref[1], 'right_on': right_col_ref[1]}
-
     def join_expr(self, j):
         left_source, right_source, condition_result = j
-        
-        # Get the python variable names for the dataframes
-        left_df = self.variables.get(left_source)
-        right_df = self.variables.get(right_source)
-        
-        # Get the join keys from the condition
-        left_on = condition_result['left_on']
-        right_on = condition_result['right_on']
-
-        # Create a new variable for the result
+        left_df, right_df = self.variables.get(left_source), self.variables.get(right_source)
+        left_on, right_on = condition_result['left_on'], condition_result['right_on']
         new_py_var = self._new_temp_var()
-        
-        # Construct the pandas merge code
         code_line = f"{new_py_var} = pd.merge({left_df}, {right_df}, left_on='{left_on}', right_on='{right_on}')"
-        
-        # Return the code and the name of the new variable
         return ([code_line], new_py_var)
 
-    def source_decl(self, s): # ... (unchanged)
+    def source_decl(self, s):
         flow_var, func_call, *schema_name_list = s
         python_var = f"{flow_var}_df"
         self.variables[flow_var] = python_var
@@ -115,23 +98,32 @@ class FlowTranspiler(Transformer):
         if func_call['name'] == 'File':
             path = func_call['args']['path'][1:-1]
             self.code_blocks.append(f"{python_var} = pd.read_csv('{path}')")
+        elif func_call['name'] == 'Parquet':
+            path = func_call['args']['path'][1:-1]
+            self.code_blocks.append(f"{python_var} = pd.read_parquet('{path}')")
         elif func_call['name'] == 'Postgres':
             self.imports.add("create_engine from sqlalchemy")
             args = func_call['args']
             password = args['password']
-            if isinstance(password, tuple) and password[0] == 'env': password_py_expr = f"os.getenv('{password[1]}')"
-            else: password_py_expr = f"{password}"
-            user, host = args['user'][1:-1], args['host'][1:-1]
-            database, table = args['database'][1:-1], args['table'][1:-1]
-            conn_str = f"'postgresql+psycopg2://{user}:' + {password_py_expr} + '@{host}/{database}'"
-            code = f"""engine = create_engine({conn_str})\n{python_var} = pd.read_sql_table('{table}', engine)"""
-            self.code_blocks.append(code)
+            if isinstance(password, tuple) and password[0] == 'env':
+                env_var_name = password[1]
+                user, host = args['user'][1:-1], args['host'][1:-1]
+                database, table = args['database'][1:-1], args['table'][1:-1]
+                code = f"""
+password = os.getenv('{env_var_name}')
+if password is None:
+    raise ValueError("Flow Execution Error: Environment variable '{env_var_name}' for the database password is not set.")
+conn_str = f'postgresql+psycopg2://{user}:{{password}}@{host}/{database}'
+engine = create_engine(conn_str)
+{python_var} = pd.read_sql_table('{table}', engine)
+"""
+                self.code_blocks.append(code.strip())
 
-    def sink_decl(self, s): # ... (unchanged)
+    def sink_decl(self, s):
         name, func_call = s[0], s[1]
         self.sinks[name] = func_call
 
-    def pipeline(self, p): # ... (unchanged)
+    def pipeline(self, p):
         start_flow_var, *steps = p
         start_py_var = self.variables.get(start_flow_var)
         if not start_py_var: raise Exception(f"Error: Variable '{start_flow_var}' not defined.")
@@ -168,9 +160,12 @@ class FlowTranspiler(Transformer):
                 if sink_info and sink_info['name'] == 'File':
                     path = sink_info['args']['path'][1:-1]
                     code.append(f"{current_py_var}.to_csv('{path}', index=False)")
+                elif sink_info and sink_info['name'] == 'Parquet':
+                    path = sink_info['args']['path'][1:-1]
+                    code.append(f"{current_py_var}.to_parquet('{path}', index=False)")
         return (code, current_py_var)
 
-    def assignment(self, a): # ... (unchanged)
+    def assignment(self, a):
         flow_var, expression_result = a
         pipeline_code, last_py_var = expression_result
         new_py_var = f"{flow_var}_df"
@@ -180,13 +175,13 @@ class FlowTranspiler(Transformer):
         comment = f"# Pipeline for '{flow_var}'"
         self.code_blocks.append(f"\n{comment}\n" + "\n".join(pipeline_code))
         
-    def execution(self, e): # ... (unchanged)
+    def execution(self, e):
         pipeline_result, = e
         pipeline_code, _ = pipeline_result
         comment = f"# Standalone pipeline execution"
         self.code_blocks.append(f"\n{comment}\n" + "\n".join(pipeline_code))
 
-    def start(self, s): # ... (unchanged)
+    def start(self, s):
         import_statements = sorted(list(self.imports), key=lambda x: " from " in x)
         header = "\n".join(f"import {imp}" if " from " not in imp else f"from {imp.split(' from ')[1]} import {imp.split(' from ')[0]}" for imp in import_statements)
         final_blocks = [b.strip() for b in self.code_blocks if b]

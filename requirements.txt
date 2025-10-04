@@ -1,8 +1,10 @@
 click==8.1.8
+-e git+https://github.com/parvjain-dev/flow-language.git@21bac37e418c93894f7406697cd31512fc7052a4#egg=flow_lang
 lark==1.3.0
 numpy==2.0.2
 pandas==2.3.3
 psycopg2-binary==2.9.9
+pyarrow==21.0.0
 python-dateutil==2.9.0.post0
 pytz==2025.2
 six==1.17.0

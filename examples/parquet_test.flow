@@ -1,0 +1,11 @@
+schema Users {
+    id: int;
+    name: string;
+    city_id: int;
+}
+
+source users <- Parquet(path: "examples/users.parquet") using Users;
+sink sorted_users -> Parquet(path: "examples/sorted_users.parquet");
+
+// Read from parquet, sort, and write back to parquet
+users -> sort(name) -> sorted_users;
