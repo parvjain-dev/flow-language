@@ -11,10 +11,10 @@ with open("src/flow.lark", "r") as f:
 flow_parser = Lark(flow_grammar, start='start')
 
 # Choose which file to run by uncommenting it
-# test_file = "examples/schema_test.flow"
+# test_file = "examples/mutate_test.flow"
 # test_file = "examples/invalid_schema_test.flow"
 # test_file = "examples/postgres_test.flow"
-test_file = "examples/mutate_test.flow" 
+# test_file = "examples/invalid_mutate.flow" 
 with open(test_file, "r") as f:
     flow_code = f.read()
 

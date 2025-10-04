@@ -1,4 +1,12 @@
-source users <- File(path: "examples/users_names.csv");
+schema UserNames {
+    id: int;
+    first_name: string;
+    last_name: string;
+    age: int;
+    status: string;
+}
+
+source users <- File(path: "examples/users_names.csv") using UserNames;
 sink mutated_report -> File(path: "mutated_report.csv");
 
 // Combine first/last names and calculate a new age value

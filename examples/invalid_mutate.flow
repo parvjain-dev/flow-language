@@ -1,0 +1,14 @@
+schema UserNames {
+    id: int;
+    first_name: string;
+    last_name: string;
+    age: int;
+    status: string;
+}
+
+source users <- File(path: "examples/users_names.csv") using UserNames;
+sink error_report -> File(path: "error_report.csv");
+
+// This is INVALID because 'last' is not a real column.
+// The pipeline now ends correctly with a sink name.
+users -> mutate(full_name = user.first_name + user.last) -> error_report;
