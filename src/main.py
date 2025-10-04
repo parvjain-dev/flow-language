@@ -15,6 +15,7 @@ flow_parser = Lark(flow_grammar, start='start')
 # test_file = "examples/invalid_schema_test.flow"
 # test_file = "examples/postgres_test.flow"
 # test_file = "examples/invalid_mutate.flow" 
+test_file = "examples/aggregate_test.flow"
 with open(test_file, "r") as f:
     flow_code = f.read()
 
