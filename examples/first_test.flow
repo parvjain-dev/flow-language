@@ -1,0 +1,11 @@
+// examples/first_test.flow
+
+test "a simple truth test that should pass" {
+    // This assertion uses arithmetic that our language understands
+    assert 1 + 1 == 2;
+}
+
+test "a simple logic test that should fail" {
+    // This assertion is false and will be caught by the test runner
+    assert 1 > 5;
+}

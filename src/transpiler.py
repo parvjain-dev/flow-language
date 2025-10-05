@@ -16,6 +16,8 @@ class FlowTranspiler(Transformer):
         self.temp_var_count += 1
         return f"temp_df_{self.temp_var_count}"
 
+    # --- Methods for grammar rules ---
+    
     def NAME(self, n): return n.value
     def STRING(self, s): return s
     def SIGNED_NUMBER(self, n): return n.value
@@ -38,14 +40,39 @@ class FlowTranspiler(Transformer):
         return None
     @v_args(inline=True)
     def column_ref(self, table, column): return (table, column)
-    def arith_expr(self, items): return f"({' '.join(str(i) for i in items)})"
-    def term(self, items): return ' '.join(str(i) for i in items)
+    def arith_expr(self, items):
+        s = str(items[0])
+        for i in range(1, len(items), 2):
+            op = str(items[i])
+            val = str(items[i+1])
+            s += f" {op} {val}"
+        return f"({s})"
+    def term(self, items):
+        s = str(items[0])
+        for i in range(1, len(items), 2):
+            op = str(items[i])
+            val = str(items[i+1])
+            s += f" {op} {val}"
+        return s
     def factor(self, items):
         if isinstance(items[0], tuple):
             table, column = items[0]
             return f"{{df}}['{column}']"
         return str(items[0])
-    def bool_expression(self, items): return " & ".join(f"({item})" for item in items)
+    def bool_expression(self, items):
+        s = str(items[0])
+        for i in range(1, len(items), 2):
+            op = str(items[i])
+            val = str(items[i+1])
+            s += f" {op} {val}"
+        return s
+    
+    def assert_statement(self, a):
+        condition_str = a[0]
+        final_condition = condition_str.replace("{df}", "df")
+        self.code_blocks.append(f"assert {final_condition}")
+        return None
+
     def filter(self, f): return ('filter', f[0])
     def select(self, s): return ('select', [name for name in s])
     def sort(self, s):
@@ -67,12 +94,9 @@ class FlowTranspiler(Transformer):
         pandas_func_map = {'avg': 'mean'}
         pandas_func = pandas_func_map.get(func_name, func_name)
         return (col_name, pandas_func)
-    
-    # THIS IS THE FIX: Replaced 'aggr_expr = agg_expr' with the correct method
     def agg_expr(self, a):
         new_col_name, agg_func_tuple = a
         return (new_col_name, agg_func_tuple)
-        
     def aggregate(self, a):
         agg_dict = {new_col: (col, func) for new_col, (col, func) in a}
         return ('aggregate', agg_dict)
@@ -86,7 +110,6 @@ class FlowTranspiler(Transformer):
         new_py_var = self._new_temp_var()
         code_line = f"{new_py_var} = pd.merge({left_df}, {right_df}, left_on='{left_on}', right_on='{right_on}')"
         return ([code_line], new_py_var)
-
     def source_decl(self, s):
         flow_var, func_call, *schema_name_list = s
         python_var = f"{flow_var}_df"
@@ -118,11 +141,9 @@ engine = create_engine(conn_str)
 {python_var} = pd.read_sql_table('{table}', engine)
 """
                 self.code_blocks.append(code.strip())
-
     def sink_decl(self, s):
         name, func_call = s[0], s[1]
         self.sinks[name] = func_call
-
     def pipeline(self, p):
         start_flow_var, *steps = p
         start_py_var = self.variables.get(start_flow_var)
@@ -181,9 +202,15 @@ engine = create_engine(conn_str)
         comment = f"# Standalone pipeline execution"
         self.code_blocks.append(f"\n{comment}\n" + "\n".join(pipeline_code))
 
+    # UPDATED: This is the corrected 'start' method
     def start(self, s):
+        # The child nodes in 's' have already been transformed, and their methods
+        # (like assert_statement) have populated self.code_blocks.
+        # This method's only job is to assemble the final script.
         import_statements = sorted(list(self.imports), key=lambda x: " from " in x)
         header = "\n".join(f"import {imp}" if " from " not in imp else f"from {imp.split(' from ')[1]} import {imp.split(' from ')[0]}" for imp in import_statements)
+        
         final_blocks = [b.strip() for b in self.code_blocks if b]
         body = "\n\n".join(final_blocks)
+
         return header + "\n\n" + body

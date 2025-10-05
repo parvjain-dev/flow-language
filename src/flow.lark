@@ -1,7 +1,16 @@
 // src/flow.lark
 
-?start: statement+
-?statement: schema_decl | source_decl | sink_decl | assignment | execution
+// UPDATED: A Flow script can now contain statements OR test_blocks
+?start: (statement | test_block)+
+
+// NEW: Definition for a test block
+test_block: "test" STRING "{" statement* "}"
+
+// UPDATED: A statement can now also be an assertion
+?statement: schema_decl | source_decl | sink_decl | assignment | execution | assert_statement
+
+// NEW: Definition for an assert statement
+assert_statement: "assert" bool_expression ";"
 
 schema_decl: "schema" NAME "{" (field_decl)* "}"
 field_decl:  NAME ":" TYPE ";"
@@ -10,7 +19,6 @@ TYPE: "string" | "int" | "float" | "bool"
 source_decl: "source" NAME "<-" function_call ("using" NAME)? ";"
 sink_decl:   "sink" NAME "->" function_call ";"
 
-// UPDATED: An assignment can now be a pipeline OR a join expression
 assignment: NAME "=" (pipeline | join_expr) ";"
 execution:  pipeline ";"
 
@@ -28,7 +36,6 @@ aggregate: "aggregate" "(" agg_expr ("," agg_expr)* ")"
 agg_expr: NAME "=" agg_function
 agg_function: AGG_FUNC_NAME "(" NAME? ")"
 
-// NEW: Rules for the join expression
 join_expr: "join" "(" NAME "," NAME "," "on" ":" join_condition ")"
 join_condition: column_ref "==" column_ref
 
