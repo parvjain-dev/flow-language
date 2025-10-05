@@ -1,0 +1,6 @@
+// copy_test.flow
+
+source input_data <- File(path: "input.csv");
+sink output_data -> File(path: "output.csv");
+
+input_data -> output_data;

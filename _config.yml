@@ -1,0 +1,14 @@
+# _config.yml
+
+title: Flow Language
+description: A declarative, type-safe language for building robust and readable data pipelines.
+theme: just-the-docs
+url: https://parvjain-dev.github.io/flow-language
+
+# Enable search
+search_enabled: true
+
+# Add a link to your repository in the header
+aux_links:
+  "Flow on GitHub":
+    - "https://github.com/parvjain-dev/flow-language"
