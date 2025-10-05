@@ -1,10 +1,11 @@
 # netlify.toml
 
 [build]
-  command = "jekyll build --source docs"
+  # This single command tells Netlify to first install the Ruby gems
+  # from the Gemfile, and THEN build the Jekyll site.
+  # This overrides the default behavior of trying to install Python packages.
+  command = "bundle install && bundle exec jekyll build --source docs"
   publish = "_site"
 
-# By setting this in the production context, we strongly hint to Netlify
-# that this is a Ruby-based build, not a Python one.
-[context.production.environment]
+[build.environment]
   RUBY_VERSION = "3.1.2"
