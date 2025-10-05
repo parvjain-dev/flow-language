@@ -1,11 +1,10 @@
 # netlify.toml
 
 [build]
-  # The command to build your Jekyll site
   command = "jekyll build --source docs"
-  # The folder that contains the built site
   publish = "_site"
 
-[build.environment]
-  # Tell Netlify which version of Ruby to use for Jekyll
+# By setting this in the production context, we strongly hint to Netlify
+# that this is a Ruby-based build, not a Python one.
+[context.production.environment]
   RUBY_VERSION = "3.1.2"
