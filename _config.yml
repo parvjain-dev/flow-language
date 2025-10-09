@@ -5,6 +5,10 @@ description: A declarative, type-safe language for building robust and readable 
 theme: just-the-docs
 url: https://parvjain-dev.github.io/flow-language
 
+# ADD THIS SECTION
+plugins:
+  - just-the-docs
+
 # Enable search
 search_enabled: true
 
